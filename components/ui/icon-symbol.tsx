@@ -18,7 +18,9 @@ const MAPPING = {
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
-} as IconMapping;
+  'compass.fill': 'explore',
+  'flame.fill': 'whatshot',
+} as Partial<Record<string, ComponentProps<typeof MaterialIcons>['name']>>;
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.

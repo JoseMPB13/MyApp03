@@ -24,7 +24,7 @@ export const MissionsService = {
         .from('user_streaks')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (streakFetchError && streakFetchError.code !== 'PGRST116') throw streakFetchError;
 
@@ -91,7 +91,7 @@ export const MissionsService = {
       .from('user_streaks')
       .select('current_streak, max_streak, last_completion_date')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) return null;
     return data;

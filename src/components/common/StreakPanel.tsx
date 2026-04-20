@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 /**
@@ -61,11 +61,11 @@ const styles = StyleSheet.create({
     padding: 20,
     marginTop: 10,
     marginBottom: 20,
-    elevation: 8,
-    shadowColor: '#FF8C00',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
+    ...Platform.select({
+      ios: { shadowColor: '#FF8C00', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 10 },
+      android: { elevation: 8 },
+      web: { boxShadow: '0px 6px 10px rgba(255, 140, 0, 0.3)' }
+    })
   },
   topRow: {
     flexDirection: 'row',

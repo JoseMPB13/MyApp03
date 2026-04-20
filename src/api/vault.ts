@@ -38,7 +38,7 @@ export const VaultService = {
       .select();
 
     if (error) {
-      console.error('Error adding word to vault:', error);
+      console.error('Error adding word to vault:', error.message, error.code, error.details);
       return { success: false, error };
     }
     return { success: true, data };

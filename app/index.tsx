@@ -13,12 +13,15 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import WordMatcher from '../src/components/games/WordMatcher';
+import { AuthService } from '../src/api/auth';
+import AuthSection from '../src/screens/AuthSection';
 import { MissionsService, StreakData } from '../src/api/missions';
-import { VaultService, VaultWord } from '../src/api/vault';
+import ActividadesSection from '../src/screens/ActividadesSection';
+import VaultSection from '../src/screens/VaultSection';
 
-// Mock User ID (En una fase real, esto vendría de Supabase Auth)
-const USER_ID = 'test-user-robert-123';
+// El USER_ID ahora se obtiene dinámicamente de la sesión de Supabase
+
+// ... (Utilidades y TabIcon omitidos por brevedad en este chunk, se mantienen los existentes)
 
 // --- Utilidades ---
 const DAYS_NAMES = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
@@ -124,121 +127,67 @@ const InicioSection = ({ streak }: { streak: StreakData | null }) => {
   );
 };
 
-// --- SECCIÓN 2: ACTIVIDADES ---
-const ActividadesSection = ({ onComplete }: { onComplete: () => void }) => {
-  const [currentMission, setCurrentMission] = useState<string | null>(null);
-
-  if (currentMission === 'word-matcher') {
-    return (
-      <View style={{ flex: 1 }}>
-        <TouchableOpacity onPress={() => setCurrentMission(null)} style={styles.backButton}>
-           <Ionicons name="arrow-back" size={24} color="#575fcf" />
-           <Text style={styles.backText}>Volver</Text>
-        </TouchableOpacity>
-        <WordMatcher onComplete={onComplete} />
-      </View>
-    );
-  }
-
-  return (
-    <ScrollView contentContainerStyle={styles.sectionPadding}>
-      <Text style={styles.sectionTitle}>Misiones Diarias</Text>
-      <TouchableOpacity 
-        style={[styles.missionCard, styles.cardShadow]} 
-        onPress={() => setCurrentMission('word-matcher')}
-      >
-        <View style={[styles.missionIcon, { backgroundColor: '#eef1ff' }]}>
-          <Ionicons name="extension-puzzle" size={32} color="#575fcf" />
-        </View>
-        <View style={styles.missionInfo}>
-          <Text style={styles.missionTitle}>Word Matcher</Text>
-          <Text style={styles.missionDesc}>Empareja el vocabulario de la semana.</Text>
-        </View>
-        <Ionicons name="play-circle" size={32} color="#575fcf" />
-      </TouchableOpacity>
-
-      <View style={[styles.missionCard, styles.cardShadow, { opacity: 0.5 }]}>
-        <View style={[styles.missionIcon, { backgroundColor: '#fff2f2' }]}>
-          <Ionicons name="chatbubbles" size={32} color="#ff4757" />
-        </View>
-        <View style={styles.missionInfo}>
-          <Text style={styles.missionTitle}>AI Scenario</Text>
-          <Text style={styles.missionDesc}>Próximamente...</Text>
-        </View>
-      </View>
-    </ScrollView>
-  );
-};
-
-// --- SECCIÓN 3: EL BAÚL ---
-const BaulSection = () => {
-  const [words, setWords] = useState<VaultWord[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadVault();
-  }, []);
-
-  const loadVault = async () => {
-    const data = await VaultService.getWords(USER_ID);
-    setWords(data);
-    setLoading(false);
-  };
-
-  return (
-    <View style={{ flex: 1, padding: 20 }}>
-      <Text style={styles.sectionTitle}>Tu Baúl</Text>
-      <Text style={styles.sectionSubtitle}>Palabras que estás aprendiendo</Text>
-      
-      {loading ? (
-        <ActivityIndicator size="large" color="#575fcf" style={{ marginTop: 40 }} />
-      ) : (
-        <ScrollView style={{ marginTop: 20 }}>
-          {words.length === 0 ? (
-             <View style={styles.emptyContainer}>
-                <Ionicons name="book-outline" size={60} color="#d1d8e0" />
-                <Text style={styles.emptyText}>Tu baúl está vacío. ¡Empieza a aprender!</Text>
-             </View>
-          ) : (
-            words.map(w => (
-              <View key={w.id} style={[styles.wordCard, styles.cardShadow]}>
-                <View>
-                  <Text style={styles.wordEs}>{w.word_es}</Text>
-                  <Text style={styles.wordEn}>{w.word_en}</Text>
-                </View>
-                <View style={styles.tag}>
-                   <Text style={styles.tagText}>{w.status?.toUpperCase()}</Text>
-                </View>
-              </View>
-            ))
-          )}
-        </ScrollView>
-      )}
-    </View>
-  );
-};
-
 // --- APP PRINCIPAL ---
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('inicio');
   const [streak, setStreak] = useState<StreakData | null>(null);
+  const [session, setSession] = useState<any>(null);
+  const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    loadGlobalData();
+    // 1. Obtener sesión inicial
+    AuthService.getCurrentUser().then(async (user) => {
+      if (user) {
+        // Asegurar que el perfil existe en la tabla profiles
+        await AuthService.ensureProfile(user.id, user.email || '');
+        setSession({ user });
+      } else {
+        setSession(null);
+      }
+      setInitializing(false);
+    });
+
+    // 2. Escuchar cambios de sesión
+    const { data: authListener } = AuthService.onAuthStateChange(async (newSession) => {
+      if (newSession?.user) {
+        await AuthService.ensureProfile(newSession.user.id, newSession.user.email || '');
+      }
+      setSession(newSession);
+    });
+
+    return () => {
+      if (authListener) authListener.subscription.unsubscribe();
+    };
   }, []);
 
+  useEffect(() => {
+    if (session?.user?.id) {
+      loadGlobalData();
+    }
+  }, [session]);
+
   const loadGlobalData = async () => {
-    const data = await MissionsService.getStreak(USER_ID);
+    if (!session?.user?.id) return;
+    const data = await MissionsService.getStreak(session.user.id);
     setStreak(data);
   };
 
   const handleMissionComplete = async () => {
-    const result = await MissionsService.completeMission(USER_ID, 'word-matcher');
+    if (!session?.user?.id) return;
+    const result = await MissionsService.completeMission(session.user.id, 'word-matcher');
     if (result.success) {
       loadGlobalData();
       setActiveTab('inicio');
     }
   };
+
+  if (initializing) {
+    return <View style={styles.centered}><ActivityIndicator size="large" color="#575fcf" /></View>;
+  }
+
+  if (!session) {
+    return <AuthSection />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -247,8 +196,8 @@ export default function HomeScreen() {
       <View style={styles.mainContent}>
         {activeTab === 'inicio' && <InicioSection streak={streak} />}
         {activeTab === 'activities' && <ActividadesSection onComplete={handleMissionComplete} />}
-        {activeTab === 'vault' && <BaulSection />}
-        {activeTab === 'settings' && <SimplePlaceholder title="AJUSTES" />}
+        {activeTab === 'vault' && <VaultSection userId={session.user.id} />}
+        {activeTab === 'settings' && <SettingsScreen email={session.user.email} onLogout={() => AuthService.signOut()} />}
       </View>
 
       <View style={styles.navContainer}>
@@ -267,8 +216,21 @@ export default function HomeScreen() {
   );
 }
 
-const SimplePlaceholder = ({ title }: any) => (
-  <View style={styles.centered}><Text style={styles.sectionPlaceholderTitle}>{title}</Text></View>
+const SettingsScreen = ({ email, onLogout }: any) => (
+  <View style={styles.sectionPadding}>
+    <Text style={styles.sectionTitle}>Ajustes</Text>
+    <View style={[styles.chatBubble, styles.cardShadow, { marginBottom: 24, borderRadius: 20 }]}>
+      <Text style={styles.coachName}>Tu Cuenta</Text>
+      <Text style={styles.coachMsg}>{email}</Text>
+    </View>
+    
+    <TouchableOpacity 
+      style={[styles.authButton, styles.logoutButton]} 
+      onPress={onLogout}
+    >
+      <Text style={styles.authButtonText}>Cerrar Sesión</Text>
+    </TouchableOpacity>
+  </View>
 );
 
 const styles = StyleSheet.create({
@@ -281,7 +243,29 @@ const styles = StyleSheet.create({
   cardShadow: {
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
-      android: { elevation: 6 }
+      android: { elevation: 6 },
+      web: { boxShadow: '0px 4px 8px rgba(0,0,0,0.1)' }
+    })
+  },
+  authButton: {
+    backgroundColor: '#3c40c6',
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      ios: { shadowColor: '#3c40c6', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12 },
+      android: { elevation: 5 },
+      web: { boxShadow: '0px 8px 12px rgba(60, 64, 198, 0.3)' }
+    })
+  },
+  authButtonText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
+  logoutButton: {
+    backgroundColor: '#ff4757',
+    ...Platform.select({
+      ios: { shadowColor: '#ff4757', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12 },
+      android: { elevation: 5 },
+      web: { boxShadow: '0px 8px 12px rgba(255, 71, 87, 0.3)' }
     })
   },
   
@@ -301,24 +285,6 @@ const styles = StyleSheet.create({
   emptyDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.3)' },
   expandHint: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20 },
   tapToExpand: { color: '#FFF', fontSize: 12, fontWeight: '800', opacity: 0.9 },
-
-  // Mission Cards
-  missionCard: { flexDirection: 'row', backgroundColor: '#FFF', padding: 20, borderRadius: 24, alignItems: 'center', marginBottom: 16 },
-  missionIcon: { width: 64, height: 64, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  missionInfo: { flex: 1 },
-  missionTitle: { fontSize: 18, fontWeight: '900', color: '#2d3436' },
-  missionDesc: { fontSize: 14, color: '#636e72', marginTop: 2 },
-  backButton: { flexDirection: 'row', alignItems: 'center', padding: 20 },
-  backText: { marginLeft: 8, fontSize: 16, fontWeight: '700', color: '#575fcf' },
-
-  // Baul Styles
-  wordCard: { flexDirection: 'row', backgroundColor: '#FFF', padding: 18, borderRadius: 20, alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  wordEs: { fontSize: 18, fontWeight: '900', color: '#2d3436' },
-  wordEn: { fontSize: 15, color: '#575fcf', fontWeight: '700', marginTop: 2 },
-  tag: { backgroundColor: '#f1f2f6', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-  tagText: { fontSize: 10, fontWeight: '900', color: '#95a5a6' },
-  emptyContainer: { alignItems: 'center', marginTop: 80 },
-  emptyText: { color: '#95a5a6', marginTop: 16, textAlign: 'center', width: 200 },
 
   // Coach
   coachContext: { flexDirection: 'row', marginTop: 32, alignItems: 'flex-start' },

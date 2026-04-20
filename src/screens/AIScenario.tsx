@@ -105,12 +105,12 @@ export default function AIScenario({ onComplete, userId }: { onComplete: () => v
     setPhase('CHAT');
     
     // Iniciar chat
-    const welcome = `Great choice! Let's talk about "${topic}". How would you like to start?`;
+    const welcome = `Hi, I am Raccoon 🦝! Great choice! Let's talk about "${topic}". You can tell me what you like about this topic or ask me a question to start.`;
     setMessages([{ 
       id: '1', 
       text: welcome, 
       sender: 'ai',
-      translation: `¡Buena elección! Hablemos sobre "${topic}". ¿Cómo te gustaría empezar?`
+      translation: `¡Hola, soy Raccoon 🦝! ¡Buena elección! Hablemos sobre "${topic}". Puedes decirme qué te gusta de este tema o hacerme una pregunta para empezar.`
     }]);
   };
 

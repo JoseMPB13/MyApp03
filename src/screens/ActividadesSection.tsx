@@ -119,7 +119,7 @@ const ActividadesSection = ({ userId, onComplete, onMissionStateChange }: Activi
         </View>
         <View style={styles.missionInfo}>
           <Text style={[styles.missionTitle, { color: colors.text }]}>Word Matcher</Text>
-          <Text style={[styles.missionDesc, { color: colors.text, opacity: 0.6 }]}>Empareja el vocabulario de la semana.</Text>
+          <Text style={[styles.missionDesc, { color: colors.text, opacity: 0.6 }]}>Empareja palabras y agiliza tu memoria visual</Text>
         </View>
         <Ionicons name="play-circle" size={32} color={colors.accent} />
       </TouchableOpacity>
@@ -132,8 +132,8 @@ const ActividadesSection = ({ userId, onComplete, onMissionStateChange }: Activi
           <Ionicons name="chatbubbles" size={32} color="#ff4757" />
         </View>
         <View style={styles.missionInfo}>
-          <Text style={[styles.missionTitle, { color: colors.text }]}>AI Scenario</Text>
-          <Text style={[styles.missionDesc, { color: colors.text, opacity: 0.6 }]}>Practica con tu Tutor IA</Text>
+          <Text style={[styles.missionTitle, { color: colors.text }]}>Charla con Raccoon</Text>
+          <Text style={[styles.missionDesc, { color: colors.text, opacity: 0.6 }]}>Conversa y aprende con tu guía interactivo</Text>
         </View>
         <Ionicons name="play-circle" size={32} color="#ff4757" />
       </TouchableOpacity>

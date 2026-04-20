@@ -99,6 +99,13 @@ const InicioSection = ({ streak, user }: { streak: StreakData | null, user: any 
     setIsExpanded(!isExpanded);
   };
 
+  const getStreakMessage = (days: number) => {
+    if (days === 0) return '¡Hora de empezar!';
+    if (days >= 1 && days <= 3) return '¡Buen comienzo!';
+    if (days >= 4 && days <= 7) return '¡En racha!';
+    return '¡Racha imparable!';
+  };
+
   const displayName = username || user?.user_metadata?.username || user?.email?.split('@')[0] || 'Amigo';
 
   return (
@@ -116,7 +123,7 @@ const InicioSection = ({ streak, user }: { streak: StreakData | null, user: any 
               </View>
               <View>
                 <Text style={styles.streakCount}>{streak?.current_streak || 0} Días</Text>
-                <Text style={styles.streakSub}>¡Racha imparable!</Text>
+                <Text style={styles.streakSub}>{getStreakMessage(streak?.current_streak || 0)}</Text>
               </View>
             </View>
 
@@ -304,11 +311,6 @@ export default function HomeScreen() {
     const result = await MissionsService.completeMission(session.user.id, missionType);
     
     if (result.success) {
-      // Si es Word Matcher, sincronizar palabras al Baúl con 20% de maestría
-      if (missionType === 'word-matcher' && data) {
-        await VaultService.syncMatchedWords(session.user.id, data);
-      }
-      
       loadGlobalData();
       handleMissionStateChange(false); // Asegurar que la barra vuelva al completar
       setActiveTab('inicio');

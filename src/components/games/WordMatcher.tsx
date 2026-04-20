@@ -214,21 +214,27 @@ export default function WordMatcher({
                   <Text style={[styles.summaryWordEs, { color: colors.text }]}>{w.word}</Text>
                   <Text style={[styles.summaryWordEn, { color: colors.accent }]}>{w.translation}</Text>
                 </View>
-                <TouchableOpacity 
-                  onPress={() => handleSaveToVault(w)} 
-                  style={[styles.saveBtn, isSaved && styles.savedBtn]}
-                  disabled={isSaved || isSavingThis}
-                >
-                  {isSavingThis ? (
-                    <ActivityIndicator color="#575fcf" size="small" />
-                  ) : (
-                    <Ionicons 
-                      name={isSaved ? "bookmark" : "bookmark-outline"} 
-                      size={24} 
-                      color={isSaved ? "#FFF" : colors.accent} 
-                    />
-                  )}
-                </TouchableOpacity>
+                {w.inVault ? (
+                  <View style={styles.inVaultBadge}>
+                    <Text style={styles.inVaultText}>En tu baúl 💎</Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity 
+                    onPress={() => handleSaveToVault(w)} 
+                    style={[styles.saveBtn, isSaved && styles.savedBtn]}
+                    disabled={isSaved || isSavingThis}
+                  >
+                    {isSavingThis ? (
+                      <ActivityIndicator color="#575fcf" size="small" />
+                    ) : (
+                      <Ionicons 
+                        name={isSaved ? "bookmark" : "bookmark-outline"} 
+                        size={24} 
+                        color={isSaved ? "#FFF" : colors.accent} 
+                      />
+                    )}
+                  </TouchableOpacity>
+                )}
               </View>
             );
           })}
@@ -347,6 +353,20 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: { color: '#FFF', fontSize: 18, fontWeight: '900' },
   
+  inVaultBadge: {
+    backgroundColor: 'rgba(5, 196, 107, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(5, 196, 107, 0.3)',
+  },
+  inVaultText: {
+    color: '#05c46b',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+
   cardShadow: {
     ...Platform.select({
       ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },

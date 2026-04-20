@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -14,7 +14,34 @@ const { width } = Dimensions.get('window');
 const DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 const ACTIVE_DAYS = [0, 1, 2, 3, 4, 5, 6]; // Representa racha de 7 días activa
 
+const TIPS = [
+  "Tip: 'Break a leg' significa buena suerte.",
+  "Tip: 'Piece of cake' es algo muy fácil.",
+  "Dato: El inglés tiene más de 1 millón de palabras.",
+  "Tip: 'Bite the bullet' significa afrontar algo difícil.",
+  "Tip: Usa 'In a nutshell' para resumir algo brevemente.",
+  "Tip: 'Under the weather' significa sentirse enfermo.",
+  "Dato: La letra 'e' es la más común en el idioma.",
+  "Tip: 'Hit the books' significa ponerse a estudiar."
+];
+
 export const StreakPanel = () => {
+  const [randomTip, setRandomTip] = useState(TIPS[0]);
+
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * TIPS.length);
+    setRandomTip(TIPS[randomIndex]);
+  }, []);
+
+  const streakDays = 7;
+
+  const getStreakMessage = (days: number) => {
+    if (days === 0) return '¡Hora de empezar!';
+    if (days >= 1 && days <= 3) return '¡Buen comienzo!';
+    if (days >= 4 && days <= 7) return '¡En racha!';
+    return '¡Racha imparable!';
+  };
+
   return (
     <LinearGradient
       colors={['#FF8C00', '#FFD700']} // Naranja a Amarillo vibrante
@@ -26,12 +53,17 @@ export const StreakPanel = () => {
         <View style={styles.countContainer}>
           <Text style={styles.fireIcon}>🔥</Text>
           <View>
-            <Text style={styles.streakCount}>7 Días</Text>
-            <Text style={styles.streakLabel}>¡Racha actual!</Text>
+            <Text style={styles.streakCount}>{streakDays} Días</Text>
+            <Text style={styles.streakLabel}>{getStreakMessage(streakDays)}</Text>
           </View>
         </View>
-        <View style={styles.raccoonCoachHeader}>
-          <Text style={{ fontSize: 24 }}>🦝</Text>
+        <View style={styles.raccoonContainer}>
+          <View style={styles.bubble}>
+             <Text style={styles.bubbleText}>{randomTip}</Text>
+          </View>
+          <View style={styles.raccoonCoachHeader}>
+            <Text style={{ fontSize: 24 }}>🦝</Text>
+          </View>
         </View>
       </View>
 
@@ -93,6 +125,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255,255,255,0.9)',
     fontWeight: '600',
+  },
+  raccoonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'flex-end',
+    marginLeft: 10,
+  },
+  bubble: {
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    marginRight: 10,
+    flexShrink: 1,
+  },
+  bubbleText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   raccoonCoachHeader: {
     width: 44,

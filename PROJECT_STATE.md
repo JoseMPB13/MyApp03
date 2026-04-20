@@ -1,14 +1,15 @@
 # MyApp03 - PROJECT_STATE.md
-**Current Version**: v17.0.0
+**Current Version**: v17.1.1
 **Last Sync**: 2026-04-20
-**Current Status**: Gemini 2.5 Flash Restored & Project v17 Stabilized
+**Current Status**: Gemini 2.5 Flash One-Letter Fix Applied & Stabilized
 **Author**: Antigravity (AI Architect)
 
-## 🎯 Reciente / Fixes de Estabilidad (v17)
+## 🎯 Reciente / Fixes de Estabilidad (v17.1)
 - **Motor de Traducción**: 
-    - Migración definitiva a **Gemini 2.5-flash** (API v1 estable).
-    - Eliminadas todas las referencias a v1beta y gemini-1.5-flash.
-    - Optimizada la URL de endpoint para evitar errores 404 por modelos retirados.
+    - Corregido `TypeError` al parsear la respuesta de Gemini mediante `optional chaining` profundo.
+    - **Fix v17.1.1**: Resuelta la emisión de "una sola letra" aumentando `maxOutputTokens` a 1024 y uniendo todas las partes de la respuesta para capturar la traducción tras el razonamiento del modelo.
+    - Confirmada la clave de API en `.env`.
+    - Manteniendo el modelo `gemini-2.5-flash` por petición del usuario.
 
 ## 20/04/2026 - The Vault & Modular Refactor v10
 - **Decisión**: Arquitectura modular en `src/screens`.

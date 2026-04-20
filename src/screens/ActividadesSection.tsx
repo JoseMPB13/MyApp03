@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import WordMatcher from '../components/games/WordMatcher';
+import AIScenario from './AIScenario';
 
 interface ActividadesSectionProps {
   onComplete: () => void;
@@ -25,6 +26,18 @@ const ActividadesSection = ({ onComplete }: ActividadesSectionProps) => {
            <Text style={styles.backText}>Volver</Text>
         </TouchableOpacity>
         <WordMatcher onComplete={onComplete} />
+      </View>
+    );
+  }
+
+  if (currentMission === 'ai-scenario') {
+    return (
+      <View style={{ flex: 1 }}>
+        <TouchableOpacity onPress={() => setCurrentMission(null)} style={styles.backButton}>
+           <Ionicons name="arrow-back" size={24} color="#575fcf" />
+           <Text style={styles.backText}>Volver</Text>
+        </TouchableOpacity>
+        <AIScenario onComplete={onComplete} />
       </View>
     );
   }
@@ -46,15 +59,19 @@ const ActividadesSection = ({ onComplete }: ActividadesSectionProps) => {
         <Ionicons name="play-circle" size={32} color="#575fcf" />
       </TouchableOpacity>
 
-      <View style={[styles.missionCard, styles.cardShadow, { opacity: 0.5 }]}>
+      <TouchableOpacity 
+        style={[styles.missionCard, styles.cardShadow]}
+        onPress={() => setCurrentMission('ai-scenario')}
+      >
         <View style={[styles.missionIcon, { backgroundColor: '#fff2f2' }]}>
           <Ionicons name="chatbubbles" size={32} color="#ff4757" />
         </View>
         <View style={styles.missionInfo}>
           <Text style={styles.missionTitle}>AI Scenario</Text>
-          <Text style={styles.missionDesc}>Próximamente...</Text>
+          <Text style={styles.missionDesc}>Practica con tu Tutor IA</Text>
         </View>
-      </View>
+        <Ionicons name="play-circle" size={32} color="#ff4757" />
+      </TouchableOpacity>
     </ScrollView>
   );
 };

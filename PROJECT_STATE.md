@@ -1,13 +1,14 @@
 # MyApp03 - PROJECT_STATE.md
-**Current Version**: v18.1.0
+**Current Version**: v19.0.0
 **Last Sync**: 2026-04-20
-**Current Status**: Groq Llama 3.1 Activo & Estabilidad de Perfiles Fix
+**Current Status**: AI Tiny Lesson Engine Activo & Layout Fixes
 **Author**: Antigravity (AI Architect)
 
-## 🎯 Reciente / Estabilización (v18.1)
-- **Motor de Traducción**: 
-    - Actualizado modelo a `llama-3.1-8b-instant` (estándar de producción estable).
-    - Verificada compatibilidad de parsing OpenAI.
+## 🎯 Reciente / Estabilización (v19.0.0)
+- **AI Tiny Lesson Engine**: 
+    - Implementado `AITutorService` con lógica estricta de evaluación y feedback dinámico.
+    - Soporte para escenarios y objetivos (Scenarios & Goals).
+    - Traducción inline al toque.
 - **Autenticación & Performance**:
     - Corregido bucle infinito de sincronización en `AuthService.ts`.
     - Implementado cache de sesión (`lastSyncedUserId`) para evitar upserts redundantes en la tabla `profiles`.

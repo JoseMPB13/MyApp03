@@ -1,50 +1,59 @@
-# Welcome to your Expo app 👋
+# 🦝 LyricLearn: AI Language Coach
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+¡Bienvenido a **LyricLearn** (Word Matcher Edition)! 🚀 Una aplicación educativa de próxima generación diseñada para llevar tu aprendizaje de inglés de la teoría pasiva a la fluidez activa. Impulsada por Inteligencia Artificial y diseñada con cariño para ser rápida, limpia y altamente efectiva.
 
-## Get started
+## ✨ Core Features
 
-1. Install dependencies
+Nuestra plataforma se centra en crear un ciclo de aprendizaje adictivo y práctico:
 
+*   🦊 **Charla con Raccoon (AI Roleplay)**: Sumérgete en escenarios conversacionales dinámicos de la vida real (aeropuertos, cafeterías, entrevistas). Nuestro tutor de IA analiza tu gramática, vocabulario y naturalidad en cada turno, dándote feedback al instante.
+*   🧠 **The Knowledge Vault (El Baúl)**: Tu "Bento Hub" personal. Cada vez que descubres una frase útil o una nueva palabra, guárdala aquí. La IA se encarga de categorizarlas automáticamente para ti.
+*   ⚡ **Word Matcher**: Un mini-juego integrado de emparejamiento de alta velocidad diseñado para cimentar tu vocabulario y preparar tu cerebro antes de hablar.
+*   🎯 **Misiones Diarias y Tips**: Mantén tu racha viva con objetivos diarios y recibe píldoras de motivación generadas por la IA cada vez que abras la app.
+
+## 🛠️ Tech Stack
+
+Construida sobre cimientos sólidos y modernos:
+
+*   **Frontend**: **React Native** usando **Expo** (SDK 54) con Expo Router para una navegación fluida y nativa.
+*   **Inteligencia Artificial**: **Groq Cloud API** con el modelo Llama 3.1, garantizando respuestas casi instantáneas (cero latencia frustrante).
+*   **Backend & Data**: **Supabase**. Utilizamos PostgreSQL, Auth y Edge Functions para asegurar una sincronización impecable de tu progreso y tu Bóveda entre dispositivos.
+
+## 🧘 Nuestra Filosofía
+
+**"Zero-Dependency Minimalist"**. Creemos que menos es más.
+*   🎨 Diseño limpio, minimalista y premium. Nos enfocamos en la usabilidad minimizando el ruido visual. Cero distracciones.
+*   🏗️ Evitamos librerías pesadas e innecesarias, construyendo la mayor parte de la interfaz con los Componentes Core nativos. ¡Ligera como una pluma!
+
+## 🚀 Instalación y Uso
+
+¿Listo para practicar? Sigue estos pasos para levantar el entorno local:
+
+1. **Clona el repositorio**
    ```bash
-   npm install
+   git clone <tu-repositorio-url>
+   cd MyApp03
    ```
 
-2. Start the app
+2. **Instala las dependencias** (puedes usar npm o bun)
+   ```bash
+   npm install
+   # o
+   bun install
+   ```
 
+3. **Configura el Entorno**
+   Crea un archivo `.env` en la raíz del proyecto y añade tus credenciales vitales:
+   ```env
+   EXPO_PUBLIC_GROQ_API_KEY=tu_clave_de_groq_aqui
+   EXPO_PUBLIC_SUPABASE_URL=tu_url_de_supabase
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=tu_clave_anonima_de_supabase
+   ```
+
+4. **¡Lanza la app!**
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+*Hecho para conversar. Hecho para aprender.* 🚀

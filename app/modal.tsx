@@ -1,17 +1,24 @@
+import React from 'react';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
-
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { useAppTheme } from '../src/context/ThemeContext';
 
 export default function ModalScreen() {
+  const { colors } = useAppTheme();
+
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title">This is a modal</ThemedText>
-      <Link href="/" dismissTo style={styles.link}>
-        <ThemedText type="link">Go to home screen</ThemedText>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Información del Coach</Text>
+      <Text style={[styles.desc, { color: colors.text, opacity: 0.7 }]}>
+        Raccoon es tu guía inteligente diseñado para ayudarte a aprender idiomas de forma natural.
+      </Text>
+      
+      <Link href="/" dismissTo asChild>
+        <TouchableOpacity style={[styles.link, { backgroundColor: colors.accent }]}>
+          <Text style={styles.linkText}>Volver al inicio</Text>
+        </TouchableOpacity>
       </Link>
-    </ThemedView>
+    </View>
   );
 }
 
@@ -20,10 +27,27 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: 24,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '900',
+    marginBottom: 12,
+  },
+  desc: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
   },
   link: {
-    marginTop: 15,
-    paddingVertical: 15,
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 16,
+  },
+  linkText: {
+    color: '#FFF',
+    fontWeight: '800',
+    fontSize: 16,
   },
 });

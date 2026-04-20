@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { VaultService, VaultWord } from '../api/vault';
-import { useGemini } from '../hooks/useGemini';
+import { useTranslation } from '../hooks/useTranslation';
 
 // Inyectado vía props desde la sesión de Supabase
 const CATEGORIES = ['General', 'Vocabulario', 'Viajes', 'Negocios', 'Frases'];
@@ -34,7 +34,7 @@ const VaultSection = ({ userId }: VaultSectionProps) => {
   const [saving, setSaving] = useState(false);
   
   // AI Translation Hook
-  const { translate, loading: translating, error: geminiError } = useGemini();
+  const { translate, loading: translating, error: translationError } = useTranslation();
   const [activeInput, setActiveInput] = useState<'en' | 'es' | null>(null);
 
 

@@ -7,9 +7,10 @@
 - **Animaciones**: `Animated` de React Native o `react-native-reanimated` (incluida en Expo).
 
 ## Inteligencia Artificial
-- **Modelo**: Gemini Flash 2.5 (v1 estable).
-- **Integración**: `fetch` directo a la API de Google AI Studio (Zero-SDK pesados).
-- **Formato de Salida**: JSON estructurado para parsing automático de feedback.
+- **Modelo**: Groq Cloud - Llama 3.1 (8B Instant) vía API.
+- **Integración**: `fetch` directo a la API de Groq (Zero-SDK pesados).
+- **Formato de Salida**: Texto plano y strings limpios para traducción.
+- **Variable**: `EXPO_PUBLIC_GROQ_API_KEY`.
 
 ## Persistencia y Datos
 - **Local**: `AsyncStorage` para configuraciones y caché rápida.

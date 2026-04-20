@@ -14,13 +14,13 @@ Se reportaron errores 400 (Bad Request) al intentar persistir datos en Supabase 
 - **Solución**: Se implementó un "Debounce" de 1000ms. La traducción solo se dispara después de que el usuario ha dejado de escribir por un segundo.
 - **Control de Flujo**: Se añadió la lógica de "Solo traducir si el campo opuesto está vacío" para evitar bucles infinitos de traducción y para no sobrescribir correcciones manuales del usuario.
 
-## Implementación del Hook `useGemini`
-Siguiendo la arquitectura **Zero-Dependency**, se implementó un hook que usa `fetch` nativo hacia los endpoints de Google AI Studio (Gemini 2.5-flash), evitando librerías pesadas como el `@google/generative-ai`.
+## Implementación del Hook `useTranslation`
+Siguiendo la arquitectura **Zero-Dependency**, se implementó un hook que usa `fetch` nativo hacia los endpoints de **Groq Cloud API** (modelo Llama 3.1), evitando librerías pesadas y asegurando una velocidad de respuesta superior a Gemini.
 
 ```tsx
-const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+const url = 'https://api.groq.com/openai/v1/chat/completions';
 const data = await response.json();
-const translatedText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+const translatedText = data.choices?.[0]?.message?.content?.trim();
 ```
 
 ## Feedback Visual

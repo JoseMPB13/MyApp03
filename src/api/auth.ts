@@ -3,6 +3,9 @@ import { supabase } from './supabase';
 /**
  * Servicio para manejar la autenticación con Supabase.
  */
+// Variable interna para evitar bucles de sincronización infinitos
+let lastSyncedUserId: string | null = null;
+
 export const AuthService = {
   /**
    * Registro de un nuevo usuario.
@@ -36,6 +39,7 @@ export const AuthService = {
    * Cierre de sesión.
    */
   async signOut() {
+    lastSyncedUserId = null; // Limpiar al salir
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   },
@@ -71,6 +75,8 @@ export const AuthService = {
    * Usa upsert para evitar errores de duplicidad y sincronizar el email.
    */
   async ensureProfile(userId: string, email: string) {
+    if (lastSyncedUserId === userId) return; // Evitar bucles redundantes
+
     try {
       console.log(`AuthService: Sincronizando perfil para ${userId} (${email})`);
       
@@ -85,6 +91,7 @@ export const AuthService = {
         console.error('AuthService: Error en upsert profile:', error.message);
       } else {
         console.log('AuthService: Perfil sincronizado con éxito');
+        lastSyncedUserId = userId; // Marcar como sincronizado
       }
     } catch (err) {
       console.error('AuthService: ensureProfile error crítico:', err);

@@ -1,15 +1,18 @@
 # MyApp03 - PROJECT_STATE.md
-**Current Version**: v17.1.1
+**Current Version**: v18.1.0
 **Last Sync**: 2026-04-20
-**Current Status**: Gemini 2.5 Flash One-Letter Fix Applied & Stabilized
+**Current Status**: Groq Llama 3.1 Activo & Estabilidad de Perfiles Fix
 **Author**: Antigravity (AI Architect)
 
-## 🎯 Reciente / Fixes de Estabilidad (v17.1)
+## 🎯 Reciente / Estabilización (v18.1)
 - **Motor de Traducción**: 
-    - Corregido `TypeError` al parsear la respuesta de Gemini mediante `optional chaining` profundo.
-    - **Fix v17.1.1**: Resuelta la emisión de "una sola letra" aumentando `maxOutputTokens` a 1024 y uniendo todas las partes de la respuesta para capturar la traducción tras el razonamiento del modelo.
-    - Confirmada la clave de API en `.env`.
-    - Manteniendo el modelo `gemini-2.5-flash` por petición del usuario.
+    - Actualizado modelo a `llama-3.1-8b-instant` (estándar de producción estable).
+    - Verificada compatibilidad de parsing OpenAI.
+- **Autenticación & Performance**:
+    - Corregido bucle infinito de sincronización en `AuthService.ts`.
+    - Implementado cache de sesión (`lastSyncedUserId`) para evitar upserts redundantes en la tabla `profiles`.
+- **UI**: 
+    - Limpieza de logs redundantes en consola.
 
 ## 20/04/2026 - The Vault & Modular Refactor v10
 - **Decisión**: Arquitectura modular en `src/screens`.

@@ -68,31 +68,26 @@ export const AuthService = {
 
   /**
    * Asegura que el usuario tenga un registro en la tabla 'profiles'.
-   * Necesario porque user_vault tiene una foreign key a profiles.
+   * Usa upsert para evitar errores de duplicidad y sincronizar el email.
    */
   async ensureProfile(userId: string, email: string) {
     try {
-      // Verificar si ya existe
-      const { data: existing } = await supabase
+      console.log(`AuthService: Sincronizando perfil para ${userId} (${email})`);
+      
+      const { error } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('id', userId)
-        .maybeSingle();
+        .upsert(
+          { id: userId, email: email, updated_at: new Date().toISOString() },
+          { onConflict: 'id' }
+        );
 
-      if (!existing) {
-        // Crear el perfil
-        const { error } = await supabase
-          .from('profiles')
-          .insert([{ id: userId, email }]);
-
-        if (error) {
-          console.error('Error creating profile:', error.message);
-        } else {
-          console.log('Profile created for user:', userId);
-        }
+      if (error) {
+        console.error('AuthService: Error en upsert profile:', error.message);
+      } else {
+        console.log('AuthService: Perfil sincronizado con éxito');
       }
     } catch (err) {
-      console.error('ensureProfile error:', err);
+      console.error('AuthService: ensureProfile error crítico:', err);
     }
   }
 };

@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { VaultService, VaultWord } from '../api/vault';
-import { useGemini } from '../hooks/useGemini';
+// useGemini removed to eliminate credit dependence
 
 // Inyectado vía props desde la sesión de Supabase
 const CATEGORIES = ['General', 'Vocabulario', 'Viajes', 'Negocios', 'Frases'];
@@ -33,43 +33,13 @@ const VaultSection = ({ userId }: VaultSectionProps) => {
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [saving, setSaving] = useState(false);
 
-  // AI Translation Hook
-  const { translate, loading: translating, error: geminiError } = useGemini();
-  const [activeInput, setActiveInput] = useState<'en' | 'es' | null>(null);
+
 
   useEffect(() => {
     if (userId) loadVault();
   }, [userId]);
 
-  // Auto-translation logic for English -> Spanish
-  useEffect(() => {
-    if (activeInput !== 'en' || !wordEn.trim() || wordEs.trim()) return;
-
-    const timer = setTimeout(async () => {
-      const translation = await translate(wordEn, 'Spanish');
-      if (translation && !wordEs.trim()) {
-        setWordEs(translation);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [wordEn]);
-
-  // Auto-translation logic for Spanish -> English
-  useEffect(() => {
-    if (activeInput !== 'es' || !wordEs.trim() || wordEn.trim()) return;
-
-    const timer = setTimeout(async () => {
-      const translation = await translate(wordEs, 'English');
-      if (translation && !wordEn.trim()) {
-        setWordEn(translation);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      }
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [wordEs]);
+  // Auto-translation logic removed for manual-only input
 
   const loadVault = async () => {
     if (!userId) return;
@@ -92,13 +62,14 @@ const VaultSection = ({ userId }: VaultSectionProps) => {
     setSaving(true);
     const newWord: VaultWord = {
       user_id: userId,
-      word_en: wordEn,
-      word_es: wordEs,
+      word_en: wordEn.trim(),
+      word_es: wordEs.trim(),
       category: category,
       status: 'learning'
     };
 
-    const result = await VaultService.addWord(newWord);
+    console.log('VaultSection: Intentando guardar palabra...', newWord);
+    const result = await VaultService.addVaultItem(newWord);
     setSaving(false);
 
     if (result.success) {
@@ -108,10 +79,11 @@ const VaultSection = ({ userId }: VaultSectionProps) => {
       setShowForm(false);
       loadVault();
     } else {
+      console.error('VaultSection: Error al guardar:', result.error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(
         'Error al guardar',
-        `No se pudo guardar la palabra: ${result.error?.message || 'Error desconocido'}. Asegúrate de que el RLS esté desactivado o configurado correctamente.`
+        `No se pudo guardar la palabra: ${result.error?.message || 'Error desconocido'}. Revisa la consola para más detalles técnicos.`
       );
     }
   };
@@ -168,14 +140,7 @@ const VaultSection = ({ userId }: VaultSectionProps) => {
           <View style={[styles.formContainer, styles.cardShadow]}>
             <Text style={styles.formTitle}>Añadir al Baúl</Text>
             
-            {geminiError && (
-              <View style={styles.geminiWarning}>
-                <Ionicons name="alert-circle" size={16} color="#FF8C00" />
-                <Text style={styles.geminiWarningText}>
-                  IA no disponible. Escribe ambos campos manualmente.
-                </Text>
-              </View>
-            )}
+
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Inglés</Text>
               <View style={styles.inputWrapper}>
@@ -183,15 +148,9 @@ const VaultSection = ({ userId }: VaultSectionProps) => {
                   style={styles.input}
                   placeholder="e.g. Resilience"
                   value={wordEn}
-                  onChangeText={(text) => {
-                    setWordEn(text);
-                    setActiveInput('en');
-                  }}
+                  onChangeText={(text) => setWordEn(text)}
                   placeholderTextColor="#A4B0BE"
                 />
-                {translating && activeInput === 'es' && (
-                  <ActivityIndicator size="small" color="#575fcf" style={styles.inputLoader} />
-                )}
               </View>
             </View>
 
@@ -202,15 +161,9 @@ const VaultSection = ({ userId }: VaultSectionProps) => {
                   style={styles.input}
                   placeholder="e.g. Resiliencia"
                   value={wordEs}
-                  onChangeText={(text) => {
-                    setWordEs(text);
-                    setActiveInput('es');
-                  }}
+                  onChangeText={(text) => setWordEs(text)}
                   placeholderTextColor="#A4B0BE"
                 />
-                {translating && activeInput === 'en' && (
-                  <ActivityIndicator size="small" color="#575fcf" style={styles.inputLoader} />
-                )}
               </View>
             </View>
 
@@ -239,9 +192,13 @@ const VaultSection = ({ userId }: VaultSectionProps) => {
             </View>
 
             <TouchableOpacity 
-              style={[styles.saveButton, styles.cardShadow3D]}
+              style={[
+                styles.saveButton, 
+                styles.cardShadow3D,
+                (!wordEn.trim() || !wordEs.trim()) && styles.saveButtonDisabled
+              ]}
               onPress={handleAddWord}
-              disabled={saving}
+              disabled={saving || !wordEn.trim() || !wordEs.trim()}
             >
               {saving ? (
                 <ActivityIndicator color="#FFF" />
@@ -328,8 +285,7 @@ const styles = StyleSheet.create({
   inputGroup: { marginBottom: 16 },
   inputLabel: { fontSize: 14, fontWeight: '800', color: '#485460', marginBottom: 8 },
   inputWrapper: { position: 'relative', justifyContent: 'center' },
-  input: { backgroundColor: '#F1F2F6', borderRadius: 12, padding: 14, fontSize: 16, color: '#2d3436', fontWeight: '600', paddingRight: 40 },
-  inputLoader: { position: 'absolute', right: 12 },
+  input: { backgroundColor: '#F1F2F6', borderRadius: 12, padding: 14, fontSize: 16, color: '#2d3436', fontWeight: '600' },
   categoryPicker: { flexDirection: 'row', flexWrap: 'wrap' },
   categoryChip: { backgroundColor: '#F1F2F6', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, marginRight: 8, marginBottom: 8, borderWidth: 1, borderColor: 'transparent' },
   categoryChipActive: { backgroundColor: '#EEF1FF', borderColor: '#575fcf' },
@@ -337,6 +293,7 @@ const styles = StyleSheet.create({
   categoryTextActive: { color: '#575fcf' },
   
   saveButton: { backgroundColor: '#05c46b', padding: 16, borderRadius: 16, alignItems: 'center', marginTop: 8, borderBottomWidth: 4, borderColor: '#04a75b' },
+  saveButtonDisabled: { backgroundColor: '#a4b0be', borderColor: '#747d8c', opacity: 0.7 },
   saveButtonText: { color: '#FFF', fontSize: 16, fontWeight: '900' },
 
   // List
@@ -369,6 +326,5 @@ const styles = StyleSheet.create({
   },
   emptyContainer: { alignItems: 'center', marginTop: 60 },
   emptyText: { color: '#95a5a6', marginTop: 16, textAlign: 'center', width: 220, fontSize: 14, fontWeight: '600' },
-  geminiWarning: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF8E7', borderRadius: 12, padding: 12, marginBottom: 16, borderWidth: 1, borderColor: '#FFE4B5' },
-  geminiWarningText: { color: '#B8860B', fontSize: 13, fontWeight: '700', marginLeft: 8, flex: 1 },
+
 });

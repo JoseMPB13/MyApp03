@@ -11,16 +11,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../api/supabase';
 import { VaultService } from '../api/vault';
 import WordMatcher from '../components/games/WordMatcher';
-import AIScenario from './AIScenario';
+import AIScenario from '../components/games/AIScenario';
 import { useAppTheme } from '../context/ThemeContext';
 
-interface ActividadesSectionProps {
+interface ActivitiesSectionProps {
   userId: string;
   onComplete: (missionType: string, data?: any) => void;
   onMissionStateChange: (active: boolean) => void;
 }
 
-const ActividadesSection = ({ userId, onComplete, onMissionStateChange }: ActividadesSectionProps) => {
+const ActivitiesSection = ({ userId, onComplete, onMissionStateChange }: ActivitiesSectionProps) => {
   const { colors, isDarkMode } = useAppTheme();
   const [currentMission, setCurrentMission] = useState<string | null>(null);
   const [lessonWords, setLessonWords] = useState<any[]>([]);
@@ -141,7 +141,7 @@ const ActividadesSection = ({ userId, onComplete, onMissionStateChange }: Activi
   );
 };
 
-export default ActividadesSection;
+export default ActivitiesSection;
 
 const styles = StyleSheet.create({
   sectionPadding: { padding: 20, paddingBottom: 130 },

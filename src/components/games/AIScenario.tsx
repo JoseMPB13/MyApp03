@@ -11,9 +11,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { AITutorService, FeedbackCapsule as FeedbackType } from '../api/ai_tutor';
-import { VaultService } from '../api/vault';
-import { useAppTheme } from '../context/ThemeContext';
+import { AITutorService, FeedbackCapsule as FeedbackType } from '../../api/ai_tutor';
+import { VaultService } from '../../api/vault';
+import { useAppTheme } from '../../context/ThemeContext';
 
 type Phase = 'SELECT_CATEGORY' | 'SELECT_TOPIC' | 'CHAT';
 
@@ -68,27 +68,27 @@ export default function AIScenario({ onComplete, userId }: { onComplete: () => v
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
+    const loadCategories = async () => {
+      setLoading(true);
+      const words = await VaultService.getWords(userId);
+      // Extraer palabras en aprendizaje
+      const learning = words.filter(w => w.status !== 'mastered');
+      setVaultWords(learning.map(w => w.word_en));
+
+      // Extraer categorías únicas
+      let uniqueCategories = Array.from(new Set(learning.map(w => w.category).filter(Boolean))) as string[];
+      
+      // Fallback si no hay categorías
+      if (uniqueCategories.length === 0) {
+        uniqueCategories = ['General', 'Viajes', 'Comida'];
+      }
+
+      setCategories(uniqueCategories.slice(0, 5)); // Mostrar max 5
+      setLoading(false);
+    };
+
     loadCategories();
-  }, []);
-
-  const loadCategories = async () => {
-    setLoading(true);
-    const words = await VaultService.getWords(userId);
-    // Extraer palabras en aprendizaje
-    const learning = words.filter(w => w.status !== 'mastered');
-    setVaultWords(learning.map(w => w.word_en));
-
-    // Extraer categorías únicas
-    let uniqueCategories = Array.from(new Set(learning.map(w => w.category).filter(Boolean))) as string[];
-    
-    // Fallback si no hay categorías
-    if (uniqueCategories.length === 0) {
-      uniqueCategories = ['General', 'Viajes', 'Comida'];
-    }
-
-    setCategories(uniqueCategories.slice(0, 5)); // Mostrar max 5
-    setLoading(false);
-  };
+  }, [userId]);
 
   const handleSelectCategory = async (cat: string) => {
     setSelectedCategory(cat);

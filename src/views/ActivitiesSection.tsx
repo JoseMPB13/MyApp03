@@ -12,7 +12,9 @@ import { supabase } from '../api/supabase';
 import { VaultService } from '../api/vault';
 import WordMatcher from '../components/games/WordMatcher';
 import AIScenario from '../components/games/AIScenario';
-import { useAppTheme } from '../context/ThemeContext';
+import { ThemeContext } from '../context/ThemeContext';
+import { useContext } from 'react';
+import { Audio } from 'expo-av';
 
 interface ActivitiesSectionProps {
   userId: string;
@@ -21,9 +23,26 @@ interface ActivitiesSectionProps {
 }
 
 const ActivitiesSection = ({ userId, onComplete, onMissionStateChange }: ActivitiesSectionProps) => {
-  const { colors, isDarkMode } = useAppTheme();
+  const { currentTheme, activeColors, toggleTheme, updateUsername, setTheme } = useContext(ThemeContext);
+  const isDarkMode = currentTheme === 'dark';
+  const colors = {
+    ...activeColors,
+    card: isDarkMode ? '#1F2937' : '#FFFFFF',
+    border: isDarkMode ? '#374151' : '#E5E7EB'
+  };
   const [currentMission, setCurrentMission] = useState<string | null>(null);
   const [lessonWords, setLessonWords] = useState<any[]>([]);
+
+  const playMissionSound = async () => {
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        require('../../assets/audio/sonido_para_los_botones_del_apartado_misiones.mp3')
+      );
+      await sound.playAsync();
+    } catch (error) {
+      console.log("Error al reproducir sonido de misión", error);
+    }
+  };
 
   const loadLessonWords = async () => {
     // 1. Cargar hasta 3 palabras que el usuario está aprendiendo del Baúl
@@ -112,7 +131,10 @@ const ActivitiesSection = ({ userId, onComplete, onMissionStateChange }: Activit
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Misiones Diarias</Text>
       <TouchableOpacity 
         style={[styles.missionCard, styles.cardShadow, { backgroundColor: colors.card }]} 
-        onPress={() => handleStartMission('word-matcher')}
+        onPress={() => {
+          playMissionSound();
+          handleStartMission('word-matcher');
+        }}
       >
         <View style={[styles.missionIcon, { backgroundColor: isDarkMode ? '#2c2c54' : '#eef1ff' }]}>
           <Ionicons name="extension-puzzle" size={32} color={colors.accent} />
@@ -126,7 +148,10 @@ const ActivitiesSection = ({ userId, onComplete, onMissionStateChange }: Activit
 
       <TouchableOpacity 
         style={[styles.missionCard, styles.cardShadow, { backgroundColor: colors.card }]}
-        onPress={() => handleStartMission('ai-scenario')}
+        onPress={() => {
+          playMissionSound();
+          handleStartMission('ai-scenario');
+        }}
       >
         <View style={[styles.missionIcon, { backgroundColor: isDarkMode ? '#4b2c20' : '#fff2f2' }]}>
           <Ionicons name="chatbubbles" size={32} color="#ff4757" />

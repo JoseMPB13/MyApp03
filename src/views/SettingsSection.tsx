@@ -10,11 +10,18 @@ import {
   Switch,
   TextInput,
 } from 'react-native';
-import { useAppTheme } from '../context/ThemeContext';
+import { ThemeContext } from '../context/ThemeContext';
+import { useContext } from 'react';
 import { AuthService } from '../api/auth';
 
 export default function SettingsSection({ user, onLogout, onProfileUpdate }: any) {
-  const { colors, isDarkMode, toggleTheme, updateUsername } = useAppTheme();
+  const { currentTheme, activeColors, toggleTheme, updateUsername, setTheme } = useContext(ThemeContext);
+  const isDarkMode = currentTheme === 'dark';
+  const colors = {
+    ...activeColors,
+    card: isDarkMode ? '#1F2937' : '#FFFFFF',
+    border: isDarkMode ? '#374151' : '#E5E7EB'
+  };
   const [nameInput, setNameInput] = useState(user?.user_metadata?.username || '');
   const [saving, setSaving] = useState(false);
 

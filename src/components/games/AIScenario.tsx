@@ -13,7 +13,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { AITutorService, FeedbackCapsule as FeedbackType } from '../../api/ai_tutor';
 import { VaultService } from '../../api/vault';
-import { useAppTheme } from '../../context/ThemeContext';
+import { ThemeContext } from '../../context/ThemeContext';
+import { useContext } from 'react';
 
 type Phase = 'SELECT_CATEGORY' | 'SELECT_TOPIC' | 'CHAT';
 
@@ -26,7 +27,13 @@ interface Message {
 }
 
 const FeedbackCapsule = ({ feedback }: { feedback: FeedbackType }) => {
-  const { colors, isDarkMode } = useAppTheme();
+  const { currentTheme, activeColors, toggleTheme, updateUsername, setTheme } = useContext(ThemeContext);
+  const isDarkMode = currentTheme === 'dark';
+  const colors = {
+    ...activeColors,
+    card: isDarkMode ? '#1F2937' : '#FFFFFF',
+    border: isDarkMode ? '#374151' : '#E5E7EB'
+  };
   return (
     <View style={[styles.feedbackContainer, { backgroundColor: isDarkMode ? '#281a3a' : '#f8f4ff', borderColor: isDarkMode ? '#4b2c6e' : '#efe5ff' }]}>
       <View style={styles.feedbackHeader}>
@@ -50,7 +57,13 @@ const FeedbackCapsule = ({ feedback }: { feedback: FeedbackType }) => {
 };
 
 export default function AIScenario({ onComplete, userId }: { onComplete: () => void; userId: string }) {
-  const { colors, isDarkMode } = useAppTheme();
+  const { currentTheme, activeColors, toggleTheme, updateUsername, setTheme } = useContext(ThemeContext);
+  const isDarkMode = currentTheme === 'dark';
+  const colors = {
+    ...activeColors,
+    card: isDarkMode ? '#1F2937' : '#FFFFFF',
+    border: isDarkMode ? '#374151' : '#E5E7EB'
+  };
   const [phase, setPhase] = useState<Phase>('SELECT_CATEGORY');
   const [categories, setCategories] = useState<string[]>([]);
   const [topics, setTopics] = useState<string[]>([]);

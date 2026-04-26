@@ -15,14 +15,21 @@ import * as Haptics from 'expo-haptics';
 import { VaultService, VaultWord } from '../api/vault';
 import { AITutorService } from '../api/ai_tutor';
 import { useTranslation } from '../hooks/useTranslation';
-import { useAppTheme } from '../context/ThemeContext';
+import { ThemeContext } from '../context/ThemeContext';
+import { useContext } from 'react';
 
 interface VaultSectionProps {
   userId: string;
 }
 
 const VaultSection = ({ userId }: VaultSectionProps) => {
-  const { colors } = useAppTheme();
+  const { currentTheme, activeColors, toggleTheme, updateUsername, setTheme } = useContext(ThemeContext);
+  const isDarkMode = currentTheme === 'dark';
+  const colors = {
+    ...activeColors,
+    card: isDarkMode ? '#1F2937' : '#FFFFFF',
+    border: isDarkMode ? '#374151' : '#E5E7EB'
+  };
   const [words, setWords] = useState<VaultWord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

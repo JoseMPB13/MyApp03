@@ -1,10 +1,17 @@
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
-import { useAppTheme } from '../src/context/ThemeContext';
+import { ThemeContext } from '../src/context/ThemeContext';
+import { useContext } from 'react';
 
 export default function ModalScreen() {
-  const { colors } = useAppTheme();
+  const { currentTheme, activeColors, toggleTheme, updateUsername, setTheme } = useContext(ThemeContext);
+  const isDarkMode = currentTheme === 'dark';
+  const colors = {
+    ...activeColors,
+    card: isDarkMode ? '#1F2937' : '#FFFFFF',
+    border: isDarkMode ? '#374151' : '#E5E7EB'
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>

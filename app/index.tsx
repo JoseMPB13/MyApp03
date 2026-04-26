@@ -11,6 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import LottieView from 'lottie-react-native';
 import { AuthService } from '../src/api/auth';
 import AuthSection from '../src/views/AuthSection';
 import { MissionsService, StreakData } from '../src/api/missions';
@@ -18,17 +19,49 @@ import ActivitiesSection from '../src/views/ActivitiesSection';
 import VaultSection from '../src/views/VaultSection';
 import InicioSection from '../src/views/InicioSection';
 import SettingsSection from '../src/views/SettingsSection';
-import { useAppTheme } from '../src/context/ThemeContext';
+import KermesUsersSection from '../src/views/KermesUsersSection';
+import { ThemeContext } from '../src/context/ThemeContext';
+import { useContext } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import PinEntryScreen from '../src/screens/PinEntryScreen';
+import CustomTabBar from '../src/components/navigation/CustomTabBar';
 
 export default function HomeScreen() {
-  const { colors, isDarkMode, updateUsername } = useAppTheme();
+  const { currentTheme, activeColors, setTheme, updateUsername } = useContext(ThemeContext);
+  const isDarkMode = currentTheme === 'dark';
+  const colors = {
+    ...activeColors,
+    card: isDarkMode ? '#1F2937' : '#FFFFFF',
+    border: isDarkMode ? '#374151' : '#E5E7EB'
+  };
   
   const [activeTab, setActiveTab] = useState('inicio');
   const [streak, setStreak] = useState<StreakData | null>(null);
   const [session, setSession] = useState<any>(null);
-  const [initializing, setInitializing] = useState(true);
+  const [isAppLoading, setIsAppLoading] = useState(false);
+  const [authStep, setAuthStep] = useState<'loading' | 'auth' | 'pin_login' | 'pin_unlock' | 'main'>('loading');
+  const [authEmail, setAuthEmail] = useState('');
+  const [pinError, setPinError] = useState<string | null>(null);
   const [isNavVisible, setIsNavVisible] = useState(true);
   const navAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (isAppLoading) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isAppLoading, fadeAnim]);
 
   const toggleNav = () => {
     const toValue = isNavVisible ? 130 : 0;
@@ -68,22 +101,37 @@ export default function HomeScreen() {
   }, [session?.user?.id]);
 
   useEffect(() => {
-    AuthService.getCurrentUser().then(async (user) => {
+    const initAuth = async () => {
+      const user = await AuthService.getCurrentUser();
+      const hasPIN = await AsyncStorage.getItem('hasCompletedPinFlow');
+      
       if (user) {
         const fullUser = await fetchFullProfile(user);
         setSession({ user: fullUser });
+        if (hasPIN === 'true') {
+          setAuthStep('pin_unlock');
+        } else {
+          setAuthStep('main');
+        }
       } else {
         setSession(null);
+        setAuthStep('auth');
       }
-      setInitializing(false);
-    });
+    };
+    initAuth();
 
     const { data: authListener } = AuthService.onAuthStateChange(async (newSession) => {
       if (newSession?.user) {
         const fullUser = await fetchFullProfile(newSession.user);
-        setSession({ ...newSession, user: fullUser });
+        const updatedSession = {
+          ...newSession,
+          user: fullUser ? fullUser : newSession.user
+        };
+        setSession(updatedSession as any);
+        // Don't auto-redirect here to avoid interrupting PIN flow
       } else {
         setSession(null);
+        setAuthStep('auth');
       }
     });
 
@@ -108,72 +156,143 @@ export default function HomeScreen() {
     }
   };
 
-  if (initializing) {
-    return <View style={[styles.centered, { backgroundColor: colors.background }]}><ActivityIndicator size="large" color={colors.accent} /></View>;
-  }
+  const handlePinRequestedForLogin = (email: string) => {
+    setAuthEmail(email);
+    setAuthStep('pin_login');
+  };
 
-  if (!session) {
-    return <AuthSection />;
+  const handleSignupSuccess = () => {
+    setAuthStep('auth');
+  };
+
+  const handleBiometricSuccess = async () => {
+    setIsAppLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    setAuthStep('main');
+    setIsAppLoading(false);
+  };
+
+  const handlePinSubmit = async (pin: string) => {
+    setPinError(null);
+    try {
+      if (authStep === 'pin_login') {
+        await AuthService.signIn(authEmail, pin);
+        await SecureStore.setItemAsync('userPin', pin);
+        await AsyncStorage.setItem('hasCompletedPinFlow', 'true');
+      } else if (authStep === 'pin_unlock') {
+        const storedPin = await SecureStore.getItemAsync('userPin');
+        if (storedPin !== pin) {
+          throw new Error('PIN incorrecto. Inténtalo de nuevo.');
+        }
+      }
+      
+      setIsAppLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      setAuthStep('main');
+    } catch (error: any) {
+      setPinError(error.message || 'PIN incorrecto. Inténtalo de nuevo.');
+    } finally {
+      setIsAppLoading(false);
+    }
+  };
+
+  const handleForgotPin = async () => {
+    await handleLogout();
+  };
+
+  const handleLogout = async () => {
+    await AuthService.signOut();
+    await AsyncStorage.removeItem('hasCompletedPinFlow');
+    await AsyncStorage.removeItem('userEmail'); // just in case we store it
+    await SecureStore.deleteItemAsync('userPin');
+    setSession(null);
+    setAuthStep('auth');
+    setActiveTab('inicio');
+  };
+
+  let content;
+  if (authStep === 'loading') {
+    content = <View style={[styles.centered, { backgroundColor: colors.background }]}><ActivityIndicator size="large" color={colors.accent} /></View>;
+  } else if (authStep === 'auth') {
+    content = (
+      <AuthSection 
+        onPinRequestedForLogin={handlePinRequestedForLogin}
+        onSignupSuccess={handleSignupSuccess}
+      />
+    );
+  } else if (authStep === 'pin_login' || authStep === 'pin_unlock') {
+    content = (
+      <PinEntryScreen 
+        username={session?.user?.user_metadata?.username || authEmail.split('@')[0]}
+        onPinComplete={handlePinSubmit}
+        onForgotPin={handleForgotPin}
+        error={pinError}
+        onBiometricSuccess={handleBiometricSuccess}
+        mode={authStep === 'pin_unlock' ? 'unlock' : 'login'}
+      />
+    );
+  } else if (!session || !session.user) {
+    content = <View style={[styles.centered, { backgroundColor: colors.background }]}><ActivityIndicator size="large" color={colors.accent} /></View>;
+  } else {
+    content = (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
+        
+        <View style={styles.mainContent}>
+          {activeTab === 'inicio' && <InicioSection streak={streak} user={session.user} />}
+          {activeTab === 'activities' && (
+            <ActivitiesSection 
+              userId={session.user.id} 
+              onComplete={handleMissionComplete} 
+              onMissionStateChange={handleMissionStateChange}
+            />
+          )}
+          {activeTab === 'vault' && <VaultSection userId={session.user.id} />}
+          {activeTab === 'kermes_users' && <KermesUsersSection />}
+          {activeTab === 'settings' && (
+            <SettingsSection 
+              user={session.user}
+              onLogout={handleLogout} 
+              onProfileUpdate={(newSessionUser: any) => setSession({ ...session, user: newSessionUser })}
+            />
+          )}
+        </View>
+
+        <Animated.View style={[styles.navContainer, { transform: [{ translateY: navAnim }] }]}>
+          <CustomTabBar 
+            tabs={['inicio', 'activities', 'vault', 'kermes_users', 'settings']}
+            activeTab={activeTab}
+            onTabPress={setActiveTab}
+          />
+        </Animated.View>
+      </SafeAreaView>
+    );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} />
-      
-      <View style={styles.mainContent}>
-        {activeTab === 'inicio' && <InicioSection streak={streak} user={session.user} />}
-        {activeTab === 'activities' && (
-          <ActivitiesSection 
-            userId={session.user.id} 
-            onComplete={handleMissionComplete} 
-            onMissionStateChange={handleMissionStateChange}
-          />
-        )}
-        {activeTab === 'vault' && <VaultSection userId={session.user.id} />}
-        {activeTab === 'settings' && (
-          <SettingsSection 
-            user={session.user}
-            onLogout={() => AuthService.signOut()} 
-            onProfileUpdate={(newSessionUser: any) => setSession({ ...session, user: newSessionUser })}
-          />
-        )}
-      </View>
-
-      <TouchableOpacity 
+    <View style={{ flex: 1 }}>
+      {content}
+      <Animated.View 
+        pointerEvents={isAppLoading ? 'auto' : 'none'}
         style={[
-          styles.navHandle, 
-          styles.cardShadow, 
-          { bottom: isNavVisible ? 120 : 20, backgroundColor: colors.card, borderColor: colors.border }
-        ]} 
-        onPress={toggleNav}
+          StyleSheet.absoluteFill, 
+          { 
+            backgroundColor: '#3F51B5', 
+            zIndex: 9999, 
+            elevation: 10,
+            opacity: fadeAnim 
+          }
+        ]}
       >
-        <Ionicons 
-          name={isNavVisible ? "chevron-down" : "chevron-up"} 
-          size={20} 
-          color={colors.accent} 
+        <LottieView
+          source={require('../assets/animation/portada.json')}
+          autoPlay
+          loop
+          style={StyleSheet.absoluteFillObject}
+          resizeMode="cover"
         />
-      </TouchableOpacity>
-
-      <Animated.View style={[styles.navContainer, { transform: [{ translateY: navAnim }] }]}>
-        <View style={[styles.navBar, styles.cardShadow, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {['inicio', 'activities', 'vault', 'settings'].map((tab) => (
-            <TouchableOpacity key={tab} onPress={() => setActiveTab(tab)} style={styles.navItem} activeOpacity={0.6}>
-              <View style={styles.iconContainer}>
-                 <Ionicons name={
-                    tab === 'inicio' ? (activeTab === tab ? 'home' : 'home-outline') :
-                    tab === 'activities' ? (activeTab === tab ? 'compass' : 'compass-outline') :
-                    tab === 'vault' ? (activeTab === tab ? 'archive' : 'archive-outline') :
-                    (activeTab === tab ? 'settings' : 'settings-outline')
-                 } size={26} color={activeTab === tab ? colors.accent : '#CBD5E0'} />
-              </View>
-              <Text style={[styles.navText, activeTab === tab ? { color: colors.accent } : null]}>
-                {tab === 'inicio' ? 'Inicio' : tab === 'activities' ? 'Misiones' : tab === 'vault' ? 'Baúl' : 'Ajustes'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
       </Animated.View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -188,8 +307,8 @@ const styles = StyleSheet.create({
       web: { boxShadow: '0px 4px 8px rgba(0,0,0,0.1)' }
     })
   },
-  navContainer: { position: 'absolute', bottom: 30, width: '100%', alignItems: 'center', paddingHorizontal: 24 },
-  navBar: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.95)', height: 80, borderRadius: 40, width: '100%', justifyContent: 'space-around', alignItems: 'center', paddingHorizontal: 12, borderWidth: 1, borderColor: '#FFF' },
+  navContainer: { position: 'absolute', bottom: 0, width: '100%', alignItems: 'center' },
+  navBar: { flexDirection: 'row', height: 80, width: '100%', justifyContent: 'space-around', alignItems: 'center', paddingHorizontal: 12 },
   navItem: { alignItems: 'center', justifyContent: 'center', flex: 1 },
   navText: { fontSize: 10, fontWeight: '900', color: '#CBD5E0', marginTop: 6, letterSpacing: 0.2 },
   iconContainer: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },

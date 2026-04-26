@@ -14,16 +14,13 @@ export const AuthService = {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          username,
+        }
+      }
     });
     if (error) throw error;
-    
-    // Once signed up, store the username inside their profile immediately
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({ id: data.user.id, email, username }, { onConflict: 'id' });
-      if (profileError) console.error("Error creating initial profile", profileError);
-    }
     
     return data;
   },

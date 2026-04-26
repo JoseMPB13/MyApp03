@@ -10,7 +10,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { StreakData } from '../../api/missions';
-import { useAppTheme } from '../../context/ThemeContext';
+import { ThemeContext } from '../../context/ThemeContext';
+import { useContext } from 'react';
 
 const DAYS_NAMES = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 const MONTHS_NAMES = [
@@ -33,7 +34,13 @@ const isCompleted = (date: Date, streak: StreakData | null) => {
 };
 
 export const StreakPanel = ({ streak }: { streak: StreakData | null }) => {
-  const { colors } = useAppTheme();
+  const { currentTheme, activeColors, toggleTheme, updateUsername, setTheme } = useContext(ThemeContext);
+  const isDarkMode = currentTheme === 'dark';
+  const colors = {
+    ...activeColors,
+    card: isDarkMode ? '#1F2937' : '#FFFFFF',
+    border: isDarkMode ? '#374151' : '#E5E7EB'
+  };
   const [isExpanded, setIsExpanded] = useState(false);
   const [viewDate] = useState(new Date());
   const expandAnim = useRef(new Animated.Value(0)).current;

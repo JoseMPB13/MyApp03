@@ -12,9 +12,25 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import LottieView from 'lottie-react-native';
 import { AuthService } from '../api/auth';
+import { supabase } from '../api/supabase';
+import * as Yup from 'yup';
 
-export default function AuthSection() {
+const validationSchema = Yup.object({
+  email: Yup.string().email('El email no es válido').required('El email es requerido'),
+  username: Yup.string().required('El nombre de usuario es requerido'),
+  password: Yup.string()
+    .matches(/^[0-9]{6}$/, 'La contraseña debe ser un PIN numérico de exactamente 6 dígitos.')
+    .required('La contraseña es requerida'),
+});
+
+interface AuthSectionProps {
+  onPinRequestedForLogin?: (email: string) => void;
+  onSignupSuccess?: () => void;
+}
+
+export default function AuthSection({ onPinRequestedForLogin, onSignupSuccess }: AuthSectionProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,8 +39,12 @@ export default function AuthSection() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const handleAuth = async () => {
-    if (!email || (!showForgotPassword && !password)) {
-      Alert.alert('Error', 'Por favor completa todos los campos.');
+    if (!email) {
+      Alert.alert('Error', 'Por favor ingresa tu email.');
+      return;
+    }
+    if (!isLogin && !password && !showForgotPassword) {
+      Alert.alert('Error', 'Por favor ingresa tu contraseña (PIN).');
       return;
     }
 
@@ -35,23 +55,58 @@ export default function AuthSection() {
         Alert.alert('Éxito', 'Se ha enviado un correo para restablecer tu contraseña.');
         setShowForgotPassword(false);
       } else if (isLogin) {
-        await AuthService.signIn(email, password);
-      } else {
-        if (!username.trim()) {
-           Alert.alert('Error', 'Por favor ingresa un nombre de usuario válido.');
-           return;
+        const { data: exists, error } = await supabase.rpc('check_user_exists', { 
+          email_input: email.trim().toLowerCase() 
+        });
+
+        if (error || !exists) {
+          setLoading(false);
+          Alert.alert('Cuenta no encontrada', 'El correo ingresado no está registrado. Verifica que esté escrito correctamente o crea una cuenta nueva.');
+          return;
         }
-        await AuthService.signUp(email, password, username.trim());
-        Alert.alert(
-          'Registro exitoso',
-          'Por favor revisa tu correo para confirmar tu cuenta antes de iniciar sesión.'
-        );
-        setIsLogin(true);
+
+        if (onPinRequestedForLogin) {
+          onPinRequestedForLogin(email);
+        }
+      } else {
+        try {
+          const formData = { email, username: username.trim(), password };
+          // 1. Validación local con Yup/Regex
+          await validationSchema.validate(formData, { abortEarly: false });
+          
+          // 2. Llamada a Supabase (AuthService ya pasa el username en metadata)
+          await AuthService.signUp(email, password, username.trim());
+          Alert.alert(
+            'Registro exitoso',
+            'Por favor revisa tu correo para confirmar tu cuenta antes de iniciar sesión.'
+          );
+          if (onSignupSuccess) {
+            onSignupSuccess();
+          } else {
+            setIsLogin(true);
+          }
+        } catch (validationError: any) {
+          if (validationError.inner) {
+            const formattedErrors = validationError.inner.map((err: any) => err.message);
+            console.error("Errores de validación:", formattedErrors);
+            Alert.alert('Error de validación', formattedErrors.join('\n'));
+            return;
+          }
+          throw validationError;
+        }
       }
     } catch (error: any) {
       console.error('Auth Error:', error);
       let msg = error.message || 'Ha ocurrido un error en la autenticación.';
       
+      if (msg.toLowerCase().includes('rate limit') || error.status === 429) {
+        Alert.alert(
+          'Demasiados intentos', 
+          'Por razones de seguridad, hemos pausado temporalmente los registros desde tu red. Por favor, intenta de nuevo en unos minutos.'
+        );
+        return; // Detenemos aquí para no mostrar el mensaje general
+      }
+
       if (msg.includes('Email not confirmed')) {
         msg = '¡Casi listo! Debes confirmar tu correo electrónico antes de entrar. Revisa tu bandeja de entrada (y la carpeta de spam).';
       } else if (msg.includes('Invalid login credentials')) {
@@ -107,9 +162,12 @@ export default function AuthSection() {
     >
       <LinearGradient colors={['#575fcf', '#3c40c6']} style={styles.gradient}>
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <Ionicons name="rocket" size={40} color="#FFF" />
-          </View>
+          <LottieView
+            source={require('../../assets/animation/pulpin.json')}
+            autoPlay
+            loop
+            style={styles.lottieAnimation}
+          />
           <Text style={styles.title}>MyApp03</Text>
           <Text style={styles.subtitle}>Tu Coach de Idiomas con IA</Text>
         </View>
@@ -160,19 +218,23 @@ export default function AuthSection() {
             </View>
           </View>
 
-          <View style={styles.inputWrapper}>
-            <Text style={styles.label}>Contraseña</Text>
-            <View style={styles.inputBox}>
-              <Ionicons name="lock-closed-outline" size={18} color="#A4B0BE" style={styles.icon} />
-              <TextInput
-                style={styles.textInput}
-                placeholder="••••••••"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
+          {!isLogin && (
+            <View style={styles.inputWrapper}>
+              <Text style={styles.label}>Contraseña (PIN)</Text>
+              <View style={styles.inputBox}>
+                <Ionicons name="lock-closed-outline" size={18} color="#A4B0BE" style={styles.icon} />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="••••••"
+                  secureTextEntry
+                  keyboardType="numeric"
+                  maxLength={6}
+                  value={password}
+                  onChangeText={setPassword}
+                />
+              </View>
             </View>
-          </View>
+          )}
 
           {isLogin && (
             <TouchableOpacity onPress={() => setShowForgotPassword(true)} style={styles.forgotPass}>
@@ -208,7 +270,7 @@ const styles = StyleSheet.create({
   gradient: { flex: 1, justifyContent: 'center', padding: 24 },
   backButton: { position: 'absolute', top: 60, left: 24, zIndex: 10 },
   header: { alignItems: 'center', marginBottom: 40 },
-  logoContainer: { width: 80, height: 80, borderRadius: 24, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  lottieAnimation: { width: 250, height: 250, alignSelf: 'center', marginBottom: -10, backgroundColor: 'transparent' },
   title: { fontSize: 32, fontWeight: '900', color: '#FFF' },
   subtitle: { fontSize: 16, color: 'rgba(255,255,255,0.8)', fontWeight: '500', marginTop: 4 },
   

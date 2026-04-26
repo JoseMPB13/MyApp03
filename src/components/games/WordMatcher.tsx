@@ -12,7 +12,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { VaultService } from '../../api/vault';
 import { AITutorService } from '../../api/ai_tutor';
-import { useAppTheme } from '../../context/ThemeContext';
+import { ThemeContext } from '../../context/ThemeContext';
+import { useContext } from 'react';
 
 
 
@@ -40,7 +41,13 @@ export default function WordMatcher({
   userId: string,
   onComplete: (matchedWords: WordPair[]) => void 
 }) {
-  const { colors, isDarkMode } = useAppTheme();
+  const { currentTheme, activeColors, toggleTheme, updateUsername, setTheme } = useContext(ThemeContext);
+  const isDarkMode = currentTheme === 'dark';
+  const colors = {
+    ...activeColors,
+    card: isDarkMode ? '#1F2937' : '#FFFFFF',
+    border: isDarkMode ? '#374151' : '#E5E7EB'
+  };
   const [esCards, setEsCards] = useState<Card[]>([]);
   const [enCards, setEnCards] = useState<Card[]>([]);
   

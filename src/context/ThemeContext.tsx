@@ -2,64 +2,80 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 
-export const Colors = {
+export const THEMES = {
   light: {
-    background: '#F0F2F5',
-    text: '#1e272e',
-    card: '#FFFFFF',
-    accent: '#575fcf',
-    border: '#EEF1FF'
+    primary: '#0857a0', 
+    accent: '#b0e8fd',  
+    text: '#111827',
+    background: '#F3F4F6' // Blanco roto verificado
   },
   dark: {
-    background: '#121212',
-    text: '#FFFFFF',
-    card: '#1e1e1e',
-    accent: '#706fd3',
-    border: '#2c2c2c'
+    primary: '#6249d1',
+    accent: '#00c6ff',
+    text: '#F3F4F6',
+    background: '#111827' // Carbón profundo verificado
   }
 };
 
-export const ThemeContext = createContext({
-  isDarkMode: false,
+interface ThemeContextType {
+  currentTheme: 'light' | 'dark';
+  toggleTheme: () => void;
+  setTheme: (theme: 'light' | 'dark') => void;
+  activeColors: typeof THEMES.light;
+  username: string;
+  updateUsername: (name: string) => void;
+  isTabBarHidden: boolean;
+  setIsTabBarHidden: (hidden: boolean) => void;
+}
+
+export const ThemeContext = createContext<ThemeContextType>({
+  currentTheme: 'dark',
   toggleTheme: () => {},
-  colors: Colors.light,
+  setTheme: () => {},
+  activeColors: THEMES.dark,
   username: '',
-  updateUsername: (name: string) => {}
+  updateUsername: () => {},
+  isTabBarHidden: false,
+  setIsTabBarHidden: () => {}
 });
 
-export const useAppTheme = () => useContext(ThemeContext);
-
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const systemAuth = useColorScheme();
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const systemTheme = useColorScheme();
+  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('dark');
   const [username, setUsername] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isTabBarHidden, setIsTabBarHidden] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem('theme').then((stored) => {
-      if (stored !== null) {
-        setIsDarkMode(stored === 'dark');
+      if (stored === 'light' || stored === 'dark') {
+        setCurrentTheme(stored);
       } else {
-        setIsDarkMode(systemAuth === 'dark');
+        setCurrentTheme(systemTheme === 'dark' ? 'dark' : 'light');
       }
       setIsLoaded(true);
     });
-  }, [systemAuth]);
+  }, [systemTheme]);
 
   const toggleTheme = () => {
-    setIsDarkMode((prev) => {
-      const next = !prev;
-      AsyncStorage.setItem('theme', next ? 'dark' : 'light');
+    setCurrentTheme((prev) => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      AsyncStorage.setItem('theme', next);
       return next;
     });
   };
 
-  const colors = isDarkMode ? Colors.dark : Colors.light;
+  const setTheme = (theme: 'light' | 'dark') => {
+    setCurrentTheme(theme);
+    AsyncStorage.setItem('theme', theme);
+  };
+
+  const activeColors = THEMES[currentTheme];
 
   if (!isLoaded) return null;
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleTheme, colors, username, updateUsername: setUsername }}>
+    <ThemeContext.Provider value={{ currentTheme, toggleTheme, setTheme, activeColors, username, updateUsername: setUsername, isTabBarHidden, setIsTabBarHidden }}>
       {children}
     </ThemeContext.Provider>
   );
